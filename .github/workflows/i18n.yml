@@ -1,0 +1,45 @@
+name: Run i18n AI automation
+on:
+  push:
+    branches:
+      - main
+concurrency:
+  group: ${{ github.workflow }}-main
+  cancel-in-progress: false
+
+jobs:
+  i18n:
+    name: Run i18n
+    if: github.repository == 'calcom/cal.diy'
+    runs-on: ubuntu-latest
+    env:
+      I18N_CONFIGURED: ${{ secrets.CI_LINGO_DOT_DEV_API_KEY != '' && secrets.CI_CAL_APP_ID != '' && secrets.CI_CAL_APP_PRIVATE_KEY != '' }}
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Generate GitHub App token
+        if: env.I18N_CONFIGURED == 'true'
+        id: generate-token
+        uses: actions/create-github-app-token@7e473efe3cb98aa54f8d4bac15400b15fad77d94
+        with:
+          app-id: ${{ secrets.CI_CAL_APP_ID }}
+          private-key: ${{ secrets.CI_CAL_APP_PRIVATE_KEY }}
+          repositories: 'cal.com'
+
+      - uses: actions/checkout@v4
+        if: env.I18N_CONFIGURED == 'true'
+      - uses: actions/setup-node@v4
+        if: env.I18N_CONFIGURED == 'true'
+        with:
+          node-version: 22
+          cache: 'npm'
+      - uses: lingodotdev/lingo.dev@cee3eb86550ca4905fc99fe90786fb7523288a61 # main
+        if: env.I18N_CONFIGURED == 'true'
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        with:
+          api-key: ${{ secrets.CI_LINGO_DOT_DEV_API_KEY }}
+          pull-request: true
+          parallel: true

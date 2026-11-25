@@ -1,0 +1,90 @@
+name: "Next.js Bundle Analysis Annotation"
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: write
+
+jobs:
+  annotate:
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download base branch bundle stats
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: nextjs-bundle-analysis.yml
+          branch: ${{ github.event.pull_request.base.ref || github.event.repository.default_branch }}
+          name: bundle
+          path: .bundle-analysis-base
+          if_no_artifact_found: ignore
+
+      - uses: ./.github/actions/yarn-install
+        if: hashFiles('.bundle-analysis-base/__bundle_analysis.json') != ''
+      - uses: ./.github/actions/cache-build
+        if: hashFiles('.bundle-analysis-base/__bundle_analysis.json') != ''
+
+      # And here's the second place - this runs after we have both the current and
+      # base branch bundle stats, and will compare them to determine what changed.
+      # There are two configurable arguments that come from package.json:
+      #
+      # - budget: optional, set a budget (bytes) against which size changes are measured
+      #           it's set to 350kb here by default, as informed by the following piece:
+      #           https://infrequently.org/2021/03/the-performance-inequality-gap/
+      #
+      # - red-status-percentage: sets the percent size increase where you get a red
+      #                          status indicator, defaults to 20%
+      #
+      # Either of these arguments can be changed or removed by editing the `nextBundleAnalysis`
+      # entry in your package.json file.
+
+      - name: Compare with base branch bundle
+        id: compare
+        if: hashFiles('.bundle-analysis-base/__bundle_analysis.json') != ''
+        run: |
+          mkdir -p apps/web/.next/analyze/base/bundle
+          cp .bundle-analysis-base/__bundle_analysis.json apps/web/.next/analyze/base/bundle/
+          cd apps/web
+          npx -p nextjs-bundle-analysis@0.5.0 report
+          npx -p nextjs-bundle-analysis@0.5.0 compare
+
+      - name: Get comment body
+        id: get-comment-body
+        if: steps.compare.outcome == 'success' && github.event.number
+        run: |
+          delimiter=$(openssl rand -hex 16)
+          {
+            printf 'body<<%s\n' "$delimiter"
+            cat apps/web/.next/analyze/__bundle_analysis_comment.txt
+            printf '\n%s\n' "$delimiter"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Find Comment
+        uses: peter-evans/find-comment@v3
+        if: steps.get-comment-body.outcome == 'success'
+        id: fc
+        with:
+          issue-number: ${{ github.event.number }}
+          body-includes: "<!-- __NEXTJS_BUNDLE_@calcom/web -->"
+
+      - name: Create Comment
+        uses: peter-evans/create-or-update-comment@v4
+        if: steps.fc.outcome == 'success' && steps.fc.outputs.comment-id == 0
+        with:
+          issue-number: ${{ github.event.number }}
+          body: ${{ steps.get-comment-body.outputs.body }}
+
+      - name: Update Comment
+        uses: peter-evans/create-or-update-comment@v4
+        if: steps.fc.outcome == 'success' && steps.fc.outputs.comment-id != 0
+        with:
+          issue-number: ${{ github.event.number }}
+          body: ${{ steps.get-comment-body.outputs.body }}
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          edit-mode: replace

@@ -1,0 +1,98 @@
+name: All checks
+
+on:
+  merge_group:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  type-check:
+    name: Type check
+    uses: ./.github/workflows/check-types.yml
+    secrets: inherit
+
+  lint:
+    name: Linters
+    uses: ./.github/workflows/lint.yml
+    secrets: inherit
+
+  unit-test:
+    name: Tests
+    uses: ./.github/workflows/unit-tests.yml
+    secrets: inherit
+
+  api-v2-unit-test:
+    name: Tests
+    uses: ./.github/workflows/api-v2-unit-tests.yml
+    secrets: inherit
+
+  build-api-v2:
+    name: Production builds
+    uses: ./.github/workflows/api-v2-production-build.yml
+    secrets: inherit
+
+  build-atoms:
+    name: Production builds
+    uses: ./.github/workflows/atoms-production-build.yml
+    secrets: inherit
+
+  build:
+    name: Production builds
+    uses: ./.github/workflows/production-build-without-database.yml
+    secrets: inherit
+
+  integration-test:
+    name: Tests
+    if: github.event_name != 'push'
+    needs: [lint, build, build-api-v2]
+    uses: ./.github/workflows/integration-tests.yml
+    secrets: inherit
+
+  e2e:
+    name: Tests
+    if: github.event_name != 'push'
+    needs: [lint, build, build-api-v2]
+    uses: ./.github/workflows/e2e.yml
+    secrets: inherit
+
+  e2e-app-store:
+    name: Tests
+    if: github.event_name != 'push'
+    needs: [lint, build, build-api-v2]
+    uses: ./.github/workflows/e2e-app-store.yml
+    secrets: inherit
+
+  e2e-embed:
+    name: Tests
+    if: github.event_name != 'push'
+    needs: [lint, build, build-api-v2]
+    uses: ./.github/workflows/e2e-embed.yml
+    secrets: inherit
+
+  e2e-embed-react:
+    name: Tests
+    if: github.event_name != 'push'
+    needs: [lint, build, build-api-v2]
+    uses: ./.github/workflows/e2e-embed-react.yml
+    secrets: inherit
+
+  required:
+    needs: [lint, type-check, unit-test, api-v2-unit-test, integration-test, build, build-api-v2, build-atoms, e2e, e2e-embed, e2e-embed-react, e2e-app-store]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: fail if conditional jobs failed
+        if: >-
+          contains(needs.*.result, 'failure') ||
+          contains(needs.*.result, 'cancelled') ||
+          (github.event_name != 'push' && contains(needs.*.result, 'skipped'))
+        run: exit 1

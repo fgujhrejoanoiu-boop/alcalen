@@ -1,0 +1,64 @@
+services:
+  database:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-calendso}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-calendso}
+    ports:
+      - "127.0.0.1:${LOCAL_DATABASE_PORT:-5450}:5432"
+    volumes:
+      - database-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:8
+    volumes:
+      - redis-data:/data
+
+  calcom:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # The upstream build needs Postgres, which is listening on the host loopback.
+      network: host
+      entitlements:
+        - network.host
+      args:
+        DATABASE_URL: postgresql://${POSTGRES_USER:-calendso}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@127.0.0.1:${LOCAL_DATABASE_PORT:-5450}/${POSTGRES_DB:-calendso}
+        NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?Set NEXTAUTH_SECRET in .env}
+        CALENDSO_ENCRYPTION_KEY: ${CALENDSO_ENCRYPTION_KEY:?Set CALENDSO_ENCRYPTION_KEY in .env}
+        NEXT_PUBLIC_WEBAPP_URL: ${NEXT_PUBLIC_WEBAPP_URL:-http://localhost:3000}
+        NEXT_PUBLIC_API_V2_URL: ${NEXT_PUBLIC_API_V2_URL:-}
+        NEXT_PUBLIC_LICENSE_CONSENT: ${NEXT_PUBLIC_LICENSE_CONSENT:-}
+        NEXT_PUBLIC_WEBSITE_TERMS_URL: ${NEXT_PUBLIC_WEBSITE_TERMS_URL:-}
+        NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL: ${NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL:-}
+        NEXT_PUBLIC_SINGLE_ORG_SLUG: ${NEXT_PUBLIC_SINGLE_ORG_SLUG:-}
+        ORGANIZATIONS_ENABLED: ${ORGANIZATIONS_ENABLED:-}
+        CALCOM_TELEMETRY_DISABLED: ${CALCOM_TELEMETRY_DISABLED:-1}
+        CSP_POLICY: ${CSP_POLICY:-}
+        MAX_OLD_SPACE_SIZE: ${MAX_OLD_SPACE_SIZE:-6144}
+    env_file: .env
+    environment:
+      DATABASE_HOST: database:5432
+      DATABASE_URL: &database-url postgresql://${POSTGRES_USER:-calendso}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@database:5432/${POSTGRES_DB:-calendso}
+      DATABASE_DIRECT_URL: *database-url
+      NEXT_PUBLIC_WEBAPP_URL: ${NEXT_PUBLIC_WEBAPP_URL:-http://localhost:3000}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      REDIS_URL: redis://redis:6379
+      CALCOM_TELEMETRY_DISABLED: ${CALCOM_TELEMETRY_DISABLED:-1}
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+volumes:
+  database-data:
+  redis-data:

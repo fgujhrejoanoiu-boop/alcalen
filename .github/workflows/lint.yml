@@ -1,0 +1,20 @@
+name: Lint
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
+      - uses: ./.github/actions/cache-checkout
+      - uses: ./.github/actions/yarn-install
+      - name: Check root manifest formatting
+        run: yarn biome format package.json
+      - name: Run Lint
+        run: yarn lint
