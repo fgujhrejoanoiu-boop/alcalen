@@ -22,6 +22,18 @@ describe("parseIpFromHeaders", () => {
   it("returns the first element when given an array", () => {
     expect(parseIpFromHeaders(["1.2.3.4", "5.6.7.8"])).toBe("1.2.3.4");
   });
+
+  it("trims whitespace around the first value in a string", () => {
+    expect(parseIpFromHeaders("  1.2.3.4\t, 5.6.7.8")).toBe("1.2.3.4");
+  });
+
+  it("trims whitespace around the first array element", () => {
+    expect(parseIpFromHeaders(["  1.2.3.4\t", "5.6.7.8"])).toBe("1.2.3.4");
+  });
+
+  it("returns an empty string for an empty array", () => {
+    expect(parseIpFromHeaders([])).toBe("");
+  });
 });
 
 describe("getIP", () => {

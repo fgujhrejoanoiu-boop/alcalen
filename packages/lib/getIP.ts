@@ -3,8 +3,11 @@ import type { NextApiRequest } from "next";
 import z from "zod";
 import logger from "./logger";
 
-export function parseIpFromHeaders(value: string | string[]) {
-  return Array.isArray(value) ? value[0] : value.split(",")[0];
+export function parseIpFromHeaders(value: string | string[]): string {
+  if (Array.isArray(value)) {
+    return value[0]?.trim() ?? "";
+  }
+  return value.split(",", 1)[0].trim();
 }
 
 /**
