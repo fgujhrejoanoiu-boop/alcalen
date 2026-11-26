@@ -1,0 +1,129 @@
+name: Standalone CI
+
+on:
+  push:
+    branches: [main, "recovery/**"]
+  pull_request:
+    branches: [main, "recovery/**"]
+  merge_group:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Install, migrate, test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: recovery_ci
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd "pg_isready -U postgres -d recovery_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      CALCOM_TELEMETRY_DISABLED: "1"
+      HUSKY: "0"
+      NEXT_PUBLIC_API_V2_ROOT_URL: http://localhost:5555
+      NEXT_TELEMETRY_DISABLED: "1"
+      NODE_OPTIONS: --max-old-space-size=8192
+      YARN_NM_MODE: hardlinks-local
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Prepare Yarn and local build configuration
+        env:
+          PGPORT: ${{ job.services.postgres.ports['5432'] }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/recovery-bin" "$RUNNER_TEMP/npm-cache"
+          printf '#!/bin/sh\nexec node "%s/.yarn/releases/yarn-4.12.0.cjs" "$@"\n' "$GITHUB_WORKSPACE" > "$RUNNER_TEMP/recovery-bin/yarn"
+          chmod +x "$RUNNER_TEMP/recovery-bin/yarn"
+          echo "$RUNNER_TEMP/recovery-bin" >> "$GITHUB_PATH"
+          echo "npm_config_cache=$RUNNER_TEMP/npm-cache" >> "$GITHUB_ENV"
+          node --version
+          node .yarn/releases/yarn-4.12.0.cjs --version
+
+          umask 077
+          cp .env.example .env
+          cp .env.appStore.example .env.appStore
+          python3 - <<'PY'
+          import os
+          from base64 import b64encode
+          from pathlib import Path
+          from secrets import token_bytes, token_hex
+
+          port = int(os.environ["PGPORT"])
+          database = f"postgresql://postgres@127.0.0.1:{port}/recovery_ci"
+          settings = {
+              "DATABASE_URL": database,
+              "DATABASE_DIRECT_URL": database,
+              "NEXTAUTH_SECRET": token_hex(32),
+              "CALENDSO_ENCRYPTION_KEY": b64encode(token_bytes(24)).decode("ascii"),
+              "CALCOM_SERVICE_ACCOUNT_ENCRYPTION_KEY": b64encode(token_bytes(24)).decode("ascii"),
+              "CRON_API_KEY": token_hex(32),
+              "NEXTAUTH_URL": "http://localhost:3000",
+              "NEXT_PUBLIC_WEBAPP_URL": "http://localhost:3000",
+              "NEXT_PUBLIC_WEBSITE_URL": "http://localhost:3000",
+              "NEXT_PUBLIC_EMBED_LIB_URL": "http://localhost:3000/embed/embed.js",
+              "NEXT_PUBLIC_API_V2_URL": "http://localhost:5555/api/v2",
+          }
+          path = Path(".env")
+          lines = path.read_text().splitlines()
+          for index, line in enumerate(lines):
+              key = line.partition("=")[0]
+              if key in settings:
+                  lines[index] = f"{key}={settings.pop(key)}"
+          lines.extend(f"{key}={value}" for key, value in settings.items())
+          path.write_text("\n".join(lines) + "\n")
+          PY
+
+      - name: Install pinned dependencies
+        run: yarn install --immutable
+
+      - name: Validate and migrate PostgreSQL
+        run: |
+          yarn prisma validate
+          yarn prisma generate
+          yarn workspace @calcom/prisma db-deploy
+
+      - name: Test standalone and enterprise code paths
+        run: |
+          yarn test --maxWorkers=2 --passWithNoTests=false \
+            packages/lib/getBlacklistedGuestEmails.test.ts \
+            packages/lib/getIP.test.ts \
+            packages/lib/timeZones.test.ts \
+            packages/features/bookings/lib/handleNewBooking/test/booking-validations.test.ts \
+            packages/features/bookings/lib/handleNewBooking/test/fresh-booking.test.ts \
+            packages/features/ee/common/server/LicenseKeyService.test.ts
+
+      - name: Build Web and check workspace types
+        run: |
+          yarn predev
+          yarn build --concurrency=2
+          yarn type-check:ci --force --concurrency=2
+
+      - name: Build API v1
+        run: node --env-file=.env .yarn/releases/yarn-4.12.0.cjs workspace @calcom/api build
+
+      - name: Build API v2
+        run: |
+          yarn workspace @calcom/platform-libraries build
+          yarn workspace @calcom/api-v2 copy-swagger-module
+          yarn workspace @calcom/api-v2 build

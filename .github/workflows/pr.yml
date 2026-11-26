@@ -23,6 +23,9 @@ jobs:
   # This MUST run before any job that checks out PR code and executes it with secrets
   trust-check:
     name: Trust Check
+    if: >-
+      vars.ENABLE_HOSTED_CI == 'true' &&
+      (github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: blacksmith-2vcpu-ubuntu-2404
     permissions:
       pull-requests: read
@@ -460,7 +463,9 @@ jobs:
         e2e-embed-react,
         e2e-app-store,
       ]
-    if: always()
+    if: >-
+      always() && vars.ENABLE_HOSTED_CI == 'true' &&
+      (github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - name: Fail if trust-check did not succeed

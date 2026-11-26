@@ -21,7 +21,7 @@ jobs:
           key: ${{ inputs.cache_key }}
 
   delete-cache-build-on-pr-close:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    if: vars.ENABLE_HOSTED_CI == 'true' && github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: blacksmith-2vcpu-ubuntu-2404
     env:
       CACHE_NAME: prod-build
@@ -33,7 +33,7 @@ jobs:
           prefix: "true"
 
   delete-git-checkout-cache-on-pr-close:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    if: vars.ENABLE_HOSTED_CI == 'true' && github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - name: Delete git-checkout cache

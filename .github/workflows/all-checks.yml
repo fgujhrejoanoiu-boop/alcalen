@@ -1,7 +1,6 @@
 name: All checks
 
 on:
-  merge_group:
   workflow_dispatch:
 
 concurrency:

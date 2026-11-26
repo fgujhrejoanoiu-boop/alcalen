@@ -6,6 +6,7 @@ on:
 
 jobs:
   cleanup:
+    if: vars.ENABLE_HOSTED_CI == 'true'
     runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - name: Check out code
