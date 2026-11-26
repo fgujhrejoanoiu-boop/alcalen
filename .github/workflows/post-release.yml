@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   release:
+    if: vars.ENABLE_HOSTED_AUTOMATION == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Generate GitHub App token

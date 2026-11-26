@@ -2,7 +2,6 @@ name: Delete
 
 on:
   delete:
-    branches-ignore: [main, gh-pages]
 
 permissions:
   contents: write
@@ -16,6 +15,9 @@ concurrency:
 
 jobs:
   delete_reports:
+    if: >-
+      vars.ENABLE_HOSTED_AUTOMATION == 'true' && github.event.ref_type == 'branch' &&
+      github.event.ref != 'main' && github.event.ref != 'gh-pages'
     name: Delete Reports
     runs-on: ubuntu-latest
     env:

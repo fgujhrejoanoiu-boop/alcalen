@@ -9,6 +9,7 @@ permissions:
   pull-requests: write
 jobs:
   cleanup-report:
+    if: vars.ENABLE_HOSTED_AUTOMATION == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Generate GitHub App token

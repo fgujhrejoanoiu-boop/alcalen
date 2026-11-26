@@ -27,6 +27,7 @@ permissions:
   pull-requests: write
 jobs:
   publish-report:
+    if: vars.ENABLE_HOSTED_AUTOMATION == 'true'
     runs-on: ubuntu-latest
     continue-on-error: true
     env:
