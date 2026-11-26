@@ -53,12 +53,12 @@ import { schemaQuerySingleOrMultipleUserIds } from "~/lib/validations/shared/que
  *                type: string
  *                format: email
  *              example: [john.doe@example.com, jane.doe@example.com]
- *        - in: query
- *          name: order
- *          required: false
- *          schema:
- *          type: string
- *          enum: [asc, desc]
+ *       - in: query
+ *         name: order
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
  *       - in: query
  *         name: sortBy
  *         required: false
@@ -71,19 +71,19 @@ import { schemaQuerySingleOrMultipleUserIds } from "~/lib/validations/shared/que
  *         schema:
  *          type: string
  *          enum: [upcoming]
- *          description: Filter bookings by status, it will overwrite dateFrom and dateTo filters
+ *         description: Filter bookings by status, it will overwrite dateFrom and dateTo filters
  *       - in: query
  *         name: dateFrom
  *         required: false
  *         schema:
  *          type: string
- *          description: ISO 8601 date string to filter bookings by start time
+ *         description: ISO 8601 date string to filter bookings by start time
  *       - in: query
  *         name: dateTo
  *         required: false
  *         schema:
  *          type: string
- *          description: ISO 8601 date string to filter bookings by end time
+ *         description: ISO 8601 date string to filter bookings by end time
  *     operationId: listBookings
  *     tags:
  *     - bookings

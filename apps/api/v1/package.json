@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "description": "Public API for Cal.com",
   "main": "index.ts",
-  "repository": "git@github.com:calcom/api.git",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fgujhrejoanoiu-boop/alcalen.git",
+    "directory": "apps/api/v1"
+  },
   "author": "Cal.com Inc.",
   "private": true,
   "scripts": {
