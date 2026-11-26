@@ -89,7 +89,7 @@ describe("Booking Validation Specifications", () => {
         emailVerified: new Date(),
       });
 
-      addToBlacklistedEmails(["organizer@example.com", "spam@test.com"]);
+      addToBlacklistedEmails(["spam@test.com", " Organizer+fixture@Example.COM "]);
 
       await createBookingScenario(
         getScenarioData({
@@ -147,7 +147,7 @@ describe("Booking Validation Specifications", () => {
       );
     });
 
-    test("prevents booking when blacklisted email is not verified in the system", async () => {
+    test("prevents booking when a normalized blacklisted email is not verified in the system", async () => {
       const handleNewBooking = getNewBookingHandler();
       const blockedEmail = "blocked@example.com";
 
@@ -167,7 +167,7 @@ describe("Booking Validation Specifications", () => {
       });
 
       // Mock environment variable for blacklisted emails
-      addToBlacklistedEmails(["blocked@example.com"]);
+      addToBlacklistedEmails(["other@example.com", " Blocked+fixture@Example.COM "]);
 
       await createBookingScenario(
         getScenarioData({
