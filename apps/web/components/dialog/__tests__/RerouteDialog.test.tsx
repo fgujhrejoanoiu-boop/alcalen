@@ -1,12 +1,11 @@
+import { RouteActionType } from "@calcom/app-store/routing-forms/zod";
+import { WEBSITE_URL } from "@calcom/lib/constants";
+import { BookingStatus, SchedulingType } from "@calcom/prisma/enums";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { Session } from "next-auth";
 import { SessionProvider } from "next-auth/react";
 import { vi } from "vitest";
-
-import { RouteActionType } from "@calcom/app-store/routing-forms/zod";
-import { BookingStatus, SchedulingType } from "@calcom/prisma/enums";
-
 import { RerouteDialog } from "../RerouteDialog";
 
 const mockRouter = {
@@ -262,7 +261,7 @@ async function mockMessageFromOpenedTab({ type, data }: { type: string; data: an
   return messageReceivedPromise;
 }
 
-async function expectEventTypeInfoInCurrentRouting({
+function expectEventTypeInfoInCurrentRouting({
   eventTypeText,
   eventTypeHref,
 }: {
@@ -271,10 +270,10 @@ async function expectEventTypeInfoInCurrentRouting({
 }) {
   const eventTypeEl = screen.getByTestId("current-routing-status-event-type");
   expect(eventTypeEl).toHaveTextContent(eventTypeText);
-  await expect(eventTypeEl.querySelector("a")).toHaveAttribute("href", eventTypeHref);
+  expect(eventTypeEl.querySelector("a")).toHaveAttribute("href", eventTypeHref);
 }
 
-async function expectEventTypeInfoInReroutePreview({
+function expectEventTypeInfoInReroutePreview({
   eventTypeText,
   eventTypeHref,
 }: {
@@ -283,7 +282,7 @@ async function expectEventTypeInfoInReroutePreview({
 }) {
   const eventTypeEl = screen.getByTestId("reroute-preview-event-type");
   expect(eventTypeEl).toHaveTextContent(eventTypeText);
-  await expect(eventTypeEl.querySelector("a")).toHaveAttribute("href", eventTypeHref);
+  expect(eventTypeEl.querySelector("a")).toHaveAttribute("href", eventTypeHref);
 }
 
 function expectOrganizerInfoInCurrentRouting({ organizerText }: { organizerText: string }) {
@@ -351,7 +350,7 @@ describe("RerouteDialog", () => {
     expect(screen.queryByText("reroute_booking")).not.toBeInTheDocument();
   });
 
-  test("displays current routing status", async () => {
+  test("displays current routing status", () => {
     render(
       <TooltipProvider>
         <RerouteDialog isOpenDialog={true} setIsOpenDialog={mockSetIsOpenDialog} booking={mockBooking} />
@@ -361,7 +360,7 @@ describe("RerouteDialog", () => {
 
     expectEventTypeInfoInCurrentRouting({
       eventTypeText: "team/test-team/test-event",
-      eventTypeHref: "https://cal.com/team/test-team/test-event",
+      eventTypeHref: `${WEBSITE_URL}/team/test-team/test-event`,
     });
     expectOrganizerInfoInCurrentRouting({
       organizerText: "user@example.com",
@@ -429,7 +428,7 @@ describe("RerouteDialog", () => {
 
       expectEventTypeInfoInReroutePreview({
         eventTypeText: "team/test-team/new-test-event",
-        eventTypeHref: "https://cal.com/team/test-team/new-test-event",
+        eventTypeHref: `${WEBSITE_URL}/team/test-team/new-test-event`,
       });
       await expect(screen.getByText("verify_new_route")).toBeEnabled();
       expect(screen.getByTestId("reroute-preview-hosts")).toHaveTextContent("reroute_preview_possible_host");
