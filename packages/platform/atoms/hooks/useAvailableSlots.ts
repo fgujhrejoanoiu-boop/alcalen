@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { SUCCESS_STATUS } from "@calcom/platform-constants";
 import type {
@@ -16,6 +16,7 @@ export const useAvailableSlots = ({
   enabled,
   ...rest
 }: GetAvailableSlotsInput_2024_04_15 & { enabled: boolean }) => {
+  const queryClient = useQueryClient();
   const availableSlots = useQuery({
     queryKey: [
       QUERY_KEY,
@@ -45,5 +46,8 @@ export const useAvailableSlots = ({
     },
     enabled: enabled,
   });
-  return availableSlots;
+  return {
+    ...availableSlots,
+    invalidate: () => queryClient.invalidateQueries({ queryKey: [QUERY_KEY] }),
+  };
 };
