@@ -1,7 +1,5 @@
 import { Navbar } from "@/components/Navbar";
-import { Inter } from "next/font/google";
-
-const inter = Inter({ subsets: ["latin"] });
+import { inter } from "@/lib/fonts";
 
 export default function Embed(props: { calUsername: string; calEmail: string }) {
   return (

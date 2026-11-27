@@ -1,12 +1,10 @@
 import { Navbar } from "@/components/Navbar";
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 import { useRouter } from "next/router";
 import { useRef, useCallback } from "react";
 
 import type { AvailabilitySettingsFormRef } from "@calcom/atoms";
 import { AvailabilitySettings } from "@calcom/atoms";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export default function Availability(props: { calUsername: string; calEmail: string }) {
   const router = useRouter();

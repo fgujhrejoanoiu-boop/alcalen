@@ -1,11 +1,9 @@
 import { Navbar } from "@/components/Navbar";
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 
 import { PaymentForm } from "@calcom/atoms";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export default function Payment(props: { calUsername: string; calEmail: string }) {
   const pathname = usePathname();

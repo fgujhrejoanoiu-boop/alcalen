@@ -1,9 +1,7 @@
 import { Navbar } from "@/components/Navbar";
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 
 import { ListSchedules, CreateSchedule } from "@calcom/atoms";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export default function Availability(props: { calUsername: string; calEmail: string }) {
   return (

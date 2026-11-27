@@ -1,8 +1,8 @@
 // pages/_app.tsx
-import type { Data } from "@/pages/api/get-managed-users";
+import { poppins } from "@/lib/fonts";
+import type { Data } from "@/pages/api/get-users";
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
-import { Poppins } from "next/font/google";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 import Select from "react-select";
@@ -10,7 +10,6 @@ import Select from "react-select";
 import { CalProvider, CalOAuthProvider, BookerEmbed, Router as CalRouter } from "@calcom/atoms";
 import "@calcom/atoms/globals.min.css";
 
-const poppins = Poppins({ subsets: ["latin"], weight: ["400", "800"] });
 type TUser = Data["users"][0];
 
 function generateRandomEmail(name: string) {
@@ -131,7 +130,7 @@ export default function App({ Component, pageProps }: AppProps) {
       {oAuth2Mode ? (
         <CalOAuthProvider
           accessToken={accessToken}
-          clientId={process.env.NEXT_PUBLIC_OAUTH2_CLIENT_ID}
+          clientId={process.env.NEXT_PUBLIC_OAUTH2_CLIENT_ID ?? ""}
           options={{
             apiUrl: process.env.NEXT_PUBLIC_CALCOM_API_URL ?? "",
             refreshUrl: "/api/refresh",
@@ -197,9 +196,9 @@ export default function App({ Component, pageProps }: AppProps) {
             onDisplayBookerEmbed={() => {
               console.log("render booker embed");
             }}
-            bannerUrl="https://i0.wp.com/mahala.co.uk/wp-content/uploads/2014/12/img_banner-thin_mountains.jpg?fit=800%2C258&ssl=1"
-            bookerCustomClassNames={{
-              bookerWrapper: "dark",
+            bookerProps={{
+              bannerUrl: "https://i0.wp.com/mahala.co.uk/wp-content/uploads/2014/12/img_banner-thin_mountains.jpg?fit=800%2C258&ssl=1",
+              customClassNames: { bookerWrapper: "dark" },
             }}
           />
         </div>

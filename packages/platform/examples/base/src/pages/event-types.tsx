@@ -1,5 +1,5 @@
 import { Navbar } from "@/components/Navbar";
-import { Inter } from "next/font/google";
+import { inter } from "@/lib/fonts";
 // eslint-disable-next-line @calcom/eslint/deprecated-imports-next-router
 import { useRouter } from "next/router";
 import { useState, useRef, useCallback } from "react";
@@ -12,8 +12,6 @@ import {
   EventTypeSettings,
   CreateEventType,
 } from "@calcom/atoms";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export default function Bookings(props: { calUsername: string; calEmail: string }) {
   const [eventTypeId, setEventTypeId] = useState<number | null>(null);
@@ -741,7 +739,7 @@ export default function Bookings(props: { calUsername: string; calEmail: string 
                       },
                       publicDisplayCheckbox: {
                         checkbox: "border border-purple-300 text-purple-500",
-                        description: "text-purple-500",
+                        label: "text-purple-500",
                         container: "",
                       },
                     },

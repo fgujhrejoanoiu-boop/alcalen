@@ -36,6 +36,7 @@ yarn-error.log*
 next-env.d.ts
 .yarn
 dev.db
+/prisma/generated/
 
 # playwright
 test-results
