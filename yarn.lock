@@ -2126,6 +2126,7 @@ __metadata:
     postcss-import: "npm:16.1.0"
     postcss-prefixer: "npm:3.0.0"
     postcss-prefixwrap: "npm:1.57.0"
+    process: "npm:0.11.10"
     react-use: "npm:17.6.0"
     tailwind-merge: "npm:1.13.2"
     tailwindcss: "npm:4.1.17"
@@ -32924,7 +32925,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"process@npm:^0.11.10":
+"process@npm:0.11.10, process@npm:^0.11.10":
   version: 0.11.10
   resolution: "process@npm:0.11.10"
   checksum: 10/dbaa7e8d1d5cf375c36963ff43116772a989ef2bb47c9bdee20f38fd8fc061119cf38140631cf90c781aca4d3f0f0d2c834711952b728953f04fd7d238f59f5b

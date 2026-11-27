@@ -84,6 +84,7 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
+        "node:process": "process/browser.js",
         "@": path.resolve(__dirname, "./src"),
         "@calcom/lib/markdownToSafeHTML": path.resolve(__dirname, "./lib/markdownToSafeHTML"),
         "@calcom/lib/hooks/useLocale": path.resolve(__dirname, "./lib/useLocale"),
