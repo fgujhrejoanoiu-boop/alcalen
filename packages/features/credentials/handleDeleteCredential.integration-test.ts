@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
 
 import handleDeleteCredential from "@calcom/features/credentials/handleDeleteCredential";
@@ -6,9 +7,9 @@ import type { Credential, EventType, User } from "@calcom/prisma/client";
 import { BookingStatus } from "@calcom/prisma/enums";
 
 describe("handleDeleteCredential Integration Tests - BookingReference Soft Delete", () => {
-  let testUser: User;
-  let testCredential: Credential;
-  let testEventType: EventType;
+  let testUser: Pick<User, "id">;
+  let testCredential: Pick<Credential, "id">;
+  let testEventType: Pick<EventType, "id">;
   const createdBookingReferenceIds: number[] = [];
   const createdBookingIds: number[] = [];
 
@@ -26,32 +27,40 @@ describe("handleDeleteCredential Integration Tests - BookingReference Soft Delet
   }
 
   beforeAll(async () => {
-    testUser = await prisma.user.create({
-      data: {
-        email: "delete-credential-test@example.com",
-        username: "delete-credential-test",
-      },
-    });
+    const username = `delete-credential-test-${randomUUID()}`;
+    ({ testUser, testCredential, testEventType } = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email: `${username}@example.com`,
+          username,
+        },
+        select: { id: true },
+      });
 
-    testCredential = await prisma.credential.create({
-      data: {
-        type: "stripe_payment",
-        key: { test_key: "test_value" },
-        userId: testUser.id,
-        appId: "stripe",
-      },
-    });
+      const credential = await tx.credential.create({
+        data: {
+          type: "stripe_payment",
+          key: { test_key: "test_value" },
+          userId: user.id,
+          appId: "stripe",
+        },
+        select: { id: true },
+      });
 
-    testEventType = await prisma.eventType.create({
-      data: {
-        title: "Paid Event",
-        slug: "paid-event-test",
-        length: 30,
-        userId: testUser.id,
-        price: 1000, // $10
-        currency: "usd",
-      },
-    });
+      const eventType = await tx.eventType.create({
+        data: {
+          title: "Paid Event",
+          slug: "paid-event-test",
+          length: 30,
+          userId: user.id,
+          price: 1000, // $10
+          currency: "usd",
+        },
+        select: { id: true },
+      });
+
+      return { testUser: user, testCredential: credential, testEventType: eventType };
+    }));
   });
 
   afterEach(async () => {
@@ -87,28 +96,13 @@ describe("handleDeleteCredential Integration Tests - BookingReference Soft Delet
   });
 
   afterAll(async () => {
-    await prisma.eventType.delete({
-      where: {
-        id: testEventType.id,
-      },
-    });
+    if (!testUser) return;
 
-    try {
-      await prisma.credential.delete({
-        where: {
-          id: testCredential.id,
-        },
-      });
-    } catch (error) {
-      // Credential already deleted by test
-      console.log("Credential deletion error:", error);
-    }
-
-    await prisma.user.delete({
-      where: {
-        id: testUser.id,
-      },
-    });
+    await prisma.$transaction([
+      prisma.eventType.deleteMany({ where: { id: testEventType.id } }),
+      prisma.credential.deleteMany({ where: { userId: testUser.id } }),
+      prisma.user.deleteMany({ where: { id: testUser.id } }),
+    ]);
   });
 
   describe("Soft-delete bookingReferences when deleting payment credential", () => {
