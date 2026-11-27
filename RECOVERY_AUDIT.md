@@ -169,7 +169,9 @@ The Atoms Vite bundle and consuming example build and run locally. The optional 
 The recovery branch keeps the complete tree as its first-parent history. Its final integration merge records the archived public commit as a second parent while retaining the audited recovery tree. That gives `main` a fast-forward path from the reviewed public snapshot. The two archive tags are local safety references. The source commits are also reachable through the recovery branch history.
 
 ```bash
-git fetch origin
+git fetch origin \
+  refs/heads/main:refs/remotes/origin/main \
+  refs/heads/recovery/unified-working:refs/remotes/origin/recovery/unified-working
 git log --graph --oneline origin/main..origin/recovery/unified-working
 git diff --stat origin/main origin/recovery/unified-working
 git diff origin/main origin/recovery/unified-working
@@ -179,6 +181,7 @@ After review, promote from a clean `main` worktree with normal branch permission
 
 ```bash
 git switch main
+git merge --ff-only origin/main
 git merge --ff-only origin/recovery/unified-working
 git push origin main
 ```
